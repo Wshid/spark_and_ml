@@ -86,5 +86,12 @@ apache-maven-3.3.9-bin.tar.gz
 ```
 #Installing jblas
 git clone https://github.com/mikiobraun/jblas
+way 1.
+```
 spark-shell --packages org.jblas:jblas:1.2.4-SNAPSHOT
-
+```
+way 2.
+```
+    mvn package
+    cp jblas..jar classpath ext/ adding
+```

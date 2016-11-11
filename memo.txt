@@ -351,3 +351,7 @@ SPARK source version으로 다운받은 이후(git clone git://github.com/apache
     cloud9에서 설치를 진행하려 했으나,
     zinc에러등 다양한 에러가 또 발생
     포기하기로!
+
+
+mvn package 이후
+jblas .jar파일을 CLASSPATH내부에 둠 -> 바로 인식됨!
