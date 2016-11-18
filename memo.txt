@@ -173,11 +173,8 @@ libfortran3인가를 설치하라고 나옴
 https://github.com/fommil/netlib-java 참고
 sudo apt-get install libatlas3-base libopenblas-base # 두번째 활성화(libblas.so.3)
 sudo apt-get install libgfortran3 
-<<<<<<< HEAD
 sudo apt-get install libopenblas-devsudo update-alternatives --config libblas.so #첫번째 활성화(libblas.so)
-=======
 sudo apt-get install libopenblas-dev #첫번째 활성화(libblas.so)
->>>>>>> 856d77aadb83f4336f959602c66d659895dd35b8
 sudo apt-get install libatlas3 //atlas로 활성화
 sudo apt-get install liblapack-dev     => 필요 없음
 
@@ -355,3 +352,43 @@ SPARK source version으로 다운받은 이후(git clone git://github.com/apache
 
 mvn package 이후
 jblas .jar파일을 CLASSPATH내부에 둠 -> 바로 인식됨!
+
+sudo apt-get install libatlas3-base libopenblas-base
+
+netlib받은 후에
+
+dversion으로 버전 변경 이후,
+    xbuild로 들어가서 mvn package를 하면 에러 발생(물론, 버전 내부 다 1.1로 변경)
+    mvn package로 jar파일 생성
+    sudo apt-get install gfortran
+    이후 다시 mvn package
+    sudo apt-get install libopenblas-dev -> 첫번째 openblas로 활성화 -> 이건 처음!
+    sudo apt-get install liblapack-dev -> 세번째 활성화
+        1,2번째의 경우 openblas로 활성화
+        3,4번째의 경우 libblias.so로 활성화
+    
+    netlib-native_system-linux-x86_64-natives.jar
+    netlib-native_ref-linux-x86_64-natives.jar
+    netlib-native_system-linux-x86_64-natives.so
+    netlib-native_ref-linux-x86_64-natives.so
+        - 이렇게 4개의 파일이 생성되었는데..
+        처음처럼 jar 2개의파일을 java의 CLASS_PATH에 집어넣는다면? 인식 못함
+        source jar 파일을 집어 넣는다면? 
+    install 한번 진행할까? 설치는 된것 같음 -> 설치완료
+        과연 실행이 될지..? -> 인식 못함
+    
+    
+        jblas 설치에 의의를 두어야 할듯 나머지 인식은 못하니까..
+        https://developer.ibm.com/linuxonpower/2016/10/13/enable-system-native-blas-library-for-netlib-java-on-openpower-linux-systems-2/ 이걸 해야하나
+        포기합시당
+        jblas 설치한걸로 만족!!
+        
+        마지막으로 source랑 native 모두 java로 옮기긴 해
+        
+http://yujuwon.tistory.com/entry/%EC%9A%B0%EB%B6%84%ED%88%AC-1204%EC%97%90-%EC%8A%A4%EC%B9%BC%EB%9D%BC-%EC%84%A4%EC%B9%98%ED%95%98%EA%B8%B0
+    -> 나중에 ipy에서 scala 사용시 적용시킬 것
+        
+
+현재 2.11, 2.12버전 scala 둘 다 설치함(실상 /usr/local에 있는 scala slink만 변경해주면 됨
+
+host에 있던 jupyter 모두 삭제 후, 가상환경에 재설치, 및 scala211 인식시킴
