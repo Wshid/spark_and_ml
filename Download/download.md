@@ -15,7 +15,9 @@
     virtualenv ipy
     source ./ipy/bin/activate
     sudo pip3 install jupyter // 꼭 가상환경 내부에서 설치 시도해야함
-    
+    sudo apt-get install python-dev
+    sudo pip3 install numpy
+    sudo apt-get install gfortran
     pip3 install scipy // science http://freeprog.tistory.com/63
     pip3 install matplotlib
 ```
@@ -119,3 +121,8 @@ git clone https://github.com/alexarchambault/jupyter-scala.git
 if jupyter kernelspec list, scala211 existed, it's done.
 
 
+#Installing pillow
+```
+ipy
+pip3 install pillow // to use .jpg file as well as .png
+```

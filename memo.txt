@@ -392,3 +392,15 @@ http://yujuwon.tistory.com/entry/%EC%9A%B0%EB%B6%84%ED%88%AC-1204%EC%97%90-%EC%8
 현재 2.11, 2.12버전 scala 둘 다 설치함(실상 /usr/local에 있는 scala slink만 변경해주면 됨
 
 host에 있던 jupyter 모두 삭제 후, 가상환경에 재설치, 및 scala211 인식시킴
+
+
+Chapter_09 에러가 아님 http://mail-archives.us.apache.org/mod_mbox/spark-user/201407.mbox/%3CCAJgQjQ_87xkpACXFpoOn0iuLZ2Q00qwWTLHmZfy9BAhKqDkv0A@mail.gmail.com%3E
+    Stage 192 contains a task of very large size (9033 KB). The maximum recommended task size is 100 KB.
+
+http://regexr.com/ 정규표현식 테스트 사이트
+
+http://blog.naver.com/lestat85/150184756668 // list와 seq의 차이
+    list는 값 변경이 되지 않음
+    Array는 값 변경이 가능
+    튜플은 _._ 형태로, 나머지는 ()형태로 참조 가능
+    
