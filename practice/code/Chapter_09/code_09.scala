@@ -14,14 +14,21 @@
 // spark-shell --driver-memory 512m // 실제 가용용량에 따라 할당 후 실행
 
 /* Replace 'PATH' with the path to the 20 Newsgroups Data */
-/* val path = "/home/ubuntu/workspace/practice/code/Chapter_09/mini_newsgroups/*" */
- val path = "/home/ubuntu/workspace/practice/code/Chapter_09/20_newsgroups/*"
+/* val path = "/home/ubuntu/workspace/practice/code/Chapter_09/20_newsgroups/*" */
+val path = "/home/ubuntu/workspace/practice/code/Chapter_09/mini_newsgroups/*"
+
 // 해당 링크가 사라져 train/test로 나누어진 원본을 찾을 수 없었다.
 // 단, 설명페이지에서 해당 데이터를 추출할 수 있었다.
 val rdd = sc.wholeTextFiles(path)
+
+/* 이런식으로 사용해서, 교차검증을 위해 train과 test를 구분 지을 수 있을 듯,
+ * randomsplit의 반환값은 결국 Array형이기 때문에 그에 맞춰서 train과 test를 할당 해주면 됨 */
+val allset=rdd.randomSplit(Array(0.6, 0.4), 100)
+val trainset=allset(0)
+val testset=allset(1)
 // count the number of records in the dataset
-val text=rdd.map{case(file, text) => text}
-println(rdd.count)
+val text=trainset.map{case(file, text) => text}
+println(trainset.count)
 /*
 ...
 14/10/12 14:27:54 INFO FileInputFormat: Total input paths to process : 11314
@@ -29,7 +36,7 @@ println(rdd.count)
 mini : 11314
 All : 19997
 */
-val newsgroups = rdd.map { case (file, text) => file.split("/").takeRight(2).head }
+val newsgroups = trainset.map { case (file, text) => file.split("/").takeRight(2).head }
 val countByGroup = newsgroups.map(n => (n, 1)).reduceByKey(_ + _).collect.sortBy(-_._2).mkString("\n")
 println(countByGroup)
 /* Mini
@@ -79,11 +86,10 @@ println(countByGroup)
 */
 
 // Tokenizing the text data
-val text = rdd.map { case (file, text) => text }
+val text = trainset.map { case (file, text) => text }
 val whiteSpaceSplit = text.flatMap(t => t.split(" ").map(_.toLowerCase))
 println(whiteSpaceSplit.distinct.count) // 
 // mini : 122296
-// All : 
 
 // inspect a look at a sample of tokens - note we set the random seed to get the same results each time
 println(whiteSpaceSplit.sample(true, 0.3, 42).take(100).mkString(",")) //distinct를 쓰면 아마 중복 제거되서 나오겠지?
@@ -310,6 +316,13 @@ import org.apache.spark.mllib.feature.IDF
 val dim = math.pow(2, 18).toInt
 val hashingTF = new HashingTF(dim)
 
+/* tf(t,d) : d문서에서 t 단어의 빈도
+ * idf(t) : 말뭉치(corpus)에서 t 단어의 역문서 빈도(log(N/d))
+ * N : 전체 문서수 // d : t 단어가 포함된 문서 수
+ */
+ 
+// 여기서부터 다시 시작
+
 val tf = hashingTF.transform(tokens)
 // cache data in memory
 tf.cache
@@ -335,8 +348,8 @@ println(v2.indices.take(10).toSeq)
 
 // min and max tf-idf scores
 val minMaxVals = tfidf.map { v => 
-	val sv = v.asInstanceOf[SV]
-	(sv.values.min, sv.values.max) 
+val sv = v.asInstanceOf[SV]
+(sv.values.min, sv.values.max) 
 }
 val globalMinMax = minMaxVals.reduce { case ((min1, max1), (min2, max2)) => 
 (math.min(min1, min2), math.max(max1, max2)) 
@@ -365,34 +378,37 @@ println(uncommonVector.values.toSeq)
 
 // === document similarity === //
 
-val hockeyText = rdd.filter { case (file, text) => file.contains("hockey") }
+val hockeyText = trainset.filter { case (file, text) => file.contains("hockey") }
 // note that the 'transform' method used below is the one which works on a single document 
 // in the form of a Seq[String], rather than the version which works on an RDD of documents
 val hockeyTF = hockeyText.mapValues(doc => hashingTF.transform(tokenize(doc)))
+// mapValues를 하게 되면 tuple 형태의 value 형태만 map 조건으로 사용이 가능함
 val hockeyTfIdf = idf.transform(hockeyTF.map(_._2))
 
 // compute cosine similarity using Breeze
 import breeze.linalg._
 val hockey1 = hockeyTfIdf.sample(true, 0.1, 42).first.asInstanceOf[SV]
+	//mllib.linalg.SparseVector 형에서 cosineSim을 계산하기 위해 breeze로 새로 변경한다.
 val breeze1 = new SparseVector(hockey1.indices, hockey1.values, hockey1.size)
 val hockey2 = hockeyTfIdf.sample(true, 0.1, 43).first.asInstanceOf[SV]
 val breeze2 = new SparseVector(hockey2.indices, hockey2.values, hockey2.size)
 val cosineSim = breeze1.dot(breeze2) / (norm(breeze1) * norm(breeze2))
 println(cosineSim)
-// 0.060250114361164626
+// 1.0 // seed 값의 변화가 없었나?
 
 // compare to comp.graphics topic
-val graphicsText = rdd.filter { case (file, text) => file.contains("comp.graphics") }
+val graphicsText = trainset.filter { case (file, text) => file.contains("comp.graphics") }
 val graphicsTF = graphicsText.mapValues(doc => hashingTF.transform(tokenize(doc)))
 val graphicsTfIdf = idf.transform(graphicsTF.map(_._2))
 val graphics = graphicsTfIdf.sample(true, 0.1, 42).first.asInstanceOf[SV]
+// sample은 해당 크기만큼 랜덤으로 가져옴
 val breezeGraphics = new SparseVector(graphics.indices, graphics.values, graphics.size)
 val cosineSim2 = breeze1.dot(breezeGraphics) / (norm(breeze1) * norm(breezeGraphics))
 println(cosineSim2)
 // 0.004664850323792852
 
 // compare to sport.baseball topic
-val baseballText = rdd.filter { case (file, text) => file.contains("baseball") }
+val baseballText = trainset.filter { case (file, text) => file.contains("baseball") }
 val baseballTF = baseballText.mapValues(doc => hashingTF.transform(tokenize(doc)))
 val baseballTfIdf = idf.transform(baseballTF.map(_._2))
 val baseball = baseballTfIdf.sample(true, 0.1, 42).first.asInstanceOf[SV]
@@ -408,18 +424,41 @@ import org.apache.spark.mllib.classification.NaiveBayes
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 
 val newsgroupsMap = newsgroups.distinct.collect().zipWithIndex.toMap
+/* Map(talk.religion.misc -> 16, talk.politics.misc -> 15, rec.sport.hockey -> 18, 
+misc.forsale -> 9, rec.motorcycles -> 1, sci.electronics -> 0, alt.atheism -> 2, 
+talk.politics.mideast -> 6, comp.sys.ibm.pc.hardware -> 12, rec.sport.baseball -> 5, 
+rec.autos -> 7, talk.politics.guns -> 8, sci.space -> 10, comp.sys.mac.hardware -> 17, 
+sci.crypt -> 11, comp.os.ms-windows.misc -> 19, comp.graphics -> 3, comp.windows.x -> 4,
+sci.med -> 14, soc.religion.christian -> 13)*/
+// val newsgroupsMap2=newsgroups.distinct.zipWithIndex.collectAsMap 값 비교
+/* newsgroupsMap2: scala.collection.immutable.Map[String,Int] = 
+Map(rec.sport.hockey -> 18, sci.space -> 10, comp.graphics -> 3, sci.crypt -> 11, 
+alt.atheism -> 2, sci.med -> 14, comp.windows.x -> 4, soc.religion.christian -> 13, 
+talk.politics.mideast -> 6, misc.forsale -> 9, comp.sys.ibm.pc.hardware -> 12, 
+talk.religion.misc -> 16, comp.sys.mac.hardware -> 17, rec.sport.baseball -> 5, 
+rec.autos -> 7, rec.motorcycles -> 1, talk.politics.guns -> 8, talk.politics.misc -> 15, comp.os.ms-windows.misc -> 19, sci.electronics -> 0) */
+
+// Indexing 되는 값만 다를 뿐 형태는 같다는 것을 알 수 있음(Map[String, Int])
 val zipped = newsgroups.zip(tfidf)
 val train = zipped.map { case (topic, vector) => LabeledPoint(newsgroupsMap(topic), vector) }
 train.cache
 val model = NaiveBayes.train(train, lambda = 0.1)
 
-val testPath = "/PATH/20news-bydate-test/*"
-val testRDD = sc.wholeTextFiles(testPath)
-val testLabels = testRDD.map { case (file, text) => 
-	val topic = file.split("/").takeRight(2).head
-	newsgroupsMap(topic)
+// 일단 여기까지 함
+
+/* 실상 테스트 집합이 필요가 없었음. 이미 단독 집합으로 사용한 경우이기 때문에 */
+//val testPath = "/PATH/20news-bydate-test/*" /* 위에서 만들었던 testset을 이용 */
+//val testRDD = sc.wholeTextFiles(testPath) /* 그렇게 되면 이 두과정이 생략됨 */
+
+val testLabels = testset.map { case (file, text) => 
+val topic = file.split("/").takeRight(2).head
+newsgroupsMap(topic)
 }
-val testTf = testRDD.map { case (file, text) => hashingTF.transform(tokenize(text)) }
+
+/* 모델 학습은 되지만, memory 부족으로 인한 에러로 인해 더 이상 진행할 수 없었음
+ * java.lang.OutOfMemoryError: Java heap space */
+
+val testTf = testset.map { case (file, text) => hashingTF.transform(tokenize(text)) }
 val testTfIdf = idf.transform(testTf)
 val zippedTest = testLabels.zip(testTfIdf)
 val test = zippedTest.map { case (topic, vector) => LabeledPoint(topic, vector) }
@@ -433,11 +472,11 @@ println(metrics.weightedFMeasure)
 // 0.7810675969031116
 
 // test on raw token features
-val rawTokens = rdd.map { case (file, text) => text.split(" ") }
+val rawTokens = trainset.map { case (file, text) => text.split(" ") }
 val rawTF = rawTokens.map(doc => hashingTF.transform(doc))
 val rawTrain = newsgroups.zip(rawTF).map { case (topic, vector) => LabeledPoint(newsgroupsMap(topic), vector) }
 val rawModel = NaiveBayes.train(rawTrain, lambda = 0.1)
-val rawTestTF = testRDD.map { case (file, text) => hashingTF.transform(text.split(" ")) }
+val rawTestTF = testset.map { case (file, text) => hashingTF.transform(text.split(" ")) }
 val rawZippedTest = testLabels.zip(rawTestTF)
 val rawTest = rawZippedTest.map { case (topic, vector) => LabeledPoint(topic, vector) }
 val rawPredictionAndLabel = rawTest.map(p => (rawModel.predict(p.features), p.label))
