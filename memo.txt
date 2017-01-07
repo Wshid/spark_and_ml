@@ -404,3 +404,30 @@ http://blog.naver.com/lestat85/150184756668 // list와 seq의 차이
     Array는 값 변경이 가능
     튜플은 _._ 형태로, 나머지는 ()형태로 참조 가능
     
+    
+https://blog.outsider.ne.kr/565 // sbt 관련
+
+sbt libraryDependencies
+    https://mvnrepository.com/artifact/org.apache.spark/spark-streaming_2.11/2.1.0 에서
+    
+일단 sbt 관련해서 조금 알아보고 10장 시작해야할듯
+빌드하는 법도 모르면서 무슨 코드를 짜겠다고..
+
+
+sbt 재설치 시작
+빈 폴더에서 sbt하면 프로젝트 생성하겠냐는 문구가 뜨지를 않음
+Duplicate sources.list entry https://dl.bintray.com/sbt/debian/  Packages (/var/lib/apt/lists/dl.bintray.com_sbt_debian_Packages.gz)
+    sudo vi /etc/apt/sources.list.d/sbt.list  -> 중복되는 결과를 지우면 됨
+    
+    프로젝트 생성 문구가, 그냥 임의의 shell 파일 설정 같은데?
+        -> shell 코드 작성해서 실행시켜보기로
+
+    프로젝트를 생성해서 sbt에 맞는 디렉터리대로 이행하지 않으면, 에러가 남
+        현재, 잘 동작하는 이유는 디렉터리를 만들어주는 shell 파일 설정을 하고 파ㅣㄹ을
+            Input 했기 때문
+    
+
+    Maven Repository에서 sbt libraryDependencies 잘 찾아 설정해야할 듯
+    libraryDependencies += "org.apache.spark" % "spark-mllib_2.11" % "2.1.0"
+    libraryDependencies += "org.apache.spark" % "spark-streaming_2.11" % "2.1.0"
+    설정 완료

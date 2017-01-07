@@ -126,3 +126,9 @@ if jupyter kernelspec list, scala211 existed, it's done.
 ipy
 pip3 install pillow // to use .jpg file as well as .png
 ```
+
+#ntpdate, rdate //안먹힘
+sudo apt-get install ntpdate
+sudo apt-get install rdate
+
+rdate -su time.bora.net
